@@ -2,6 +2,8 @@
 
 [English](README-en.md)
 
+# fork  源仓库在这里，https://github.com/bluicezhen/txt-to-epub，欢迎大家给源作者 stars。 这个只是转载➕修改一些
+
 一个纯前端的 TXT 小说转 EPUB 小工具。支持简体中文与英文文本，自动识别章节并生成含目录的 EPUB 文件，全部处理在浏览器本地完成，不上传文件，保护用户隐私。
 
 在线体验地址：https://txt2epub.bluice.xyz/

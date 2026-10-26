@@ -1,5 +1,6 @@
 # TXT to EPUB Converter (Frontend SPA)
 
+# fork  源仓库在这里，https://github.com/bluicezhen/txt-to-epub，欢迎大家给源作者 stars。 这个只是转载➕修改一些
 [简体中文](README.md)
 
 A pure frontend TXT-to-EPUB converter built with Vue 3, TypeScript, and Vite. It supports both Simplified Chinese and English text, automatically detects chapters and generates an EPUB with a table of contents. Everything runs in your browser and no file is uploaded, which helps protect user privacy.
