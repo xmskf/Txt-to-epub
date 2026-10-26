@@ -135,11 +135,13 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
-      - name: 构建（项目页路径前缀）
-        run: npm run build -- --base=/txt-to-epub/
-
       - name: 配置 Pages
+        id: pages
         uses: actions/configure-pages@v5
+
+      # 使用 Pages 的实际路径前缀，仓库名大小写敏感（如 /Txt-to-epub）
+      - name: 构建（Pages 路径前缀）
+        run: npm run build -- --base=${{ steps.pages.outputs.base_path }}
 
       - name: 上传 Pages 产物
         uses: actions/upload-pages-artifact@v3

@@ -145,13 +145,13 @@ The Dockerfile uses a two-stage build: `node:22-alpine` builds the app, and the 
 
 ### GitHub Pages deployment
 
-After tests pass on `main`, the pipeline rebuilds with `--base=/txt-to-epub/` and publishes to GitHub Pages:
+After tests pass on `main`, the pipeline reads the base path output by `actions/configure-pages`, rebuilds with it as Vite's `--base`, and publishes:
 
-https://xmskf.github.io/txt-to-epub/
+https://xmskf.github.io/Txt-to-epub/
 
 Before the first run, set **Source** to **GitHub Actions** under **Settings → Pages → Build and deployment** (Pages on private repositories requires GitHub Pro/Team/Enterprise).
 
-> A project page is served under the repository name, so the build sets Vite's `base`. Deployments to a custom domain or root path (e.g. Cloudflare) keep using the default build.
+> A project page is served under the repository name, and the path is case-sensitive (`/Txt-to-epub/` here). Vite's `base` must match it exactly, or assets 404 and the page renders blank. Deployments to a custom domain or root path (e.g. Cloudflare) keep using the default build.
 
 ## Chapter Detection Rules
 

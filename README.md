@@ -146,13 +146,13 @@ Dockerfile 采用两阶段构建：`node:22-alpine` 负责构建，最终镜像�
 
 ### GitHub Pages 部署
 
-`main` 分支测试通过后，流水线会用 `--base=/txt-to-epub/` 重新构建并发布到 GitHub Pages：
+`main` 分支测试通过后，流水线会读取 `actions/configure-pages` 输出的 Pages 路径前缀，作为 Vite 的 `--base` 重新构建并发布：
 
-https://xmskf.github.io/txt-to-epub/
+https://xmskf.github.io/Txt-to-epub/
 
 使用前需要在仓库的 **Settings → Pages → Build and deployment** 中把 **Source** 设为 **GitHub Actions**（私有仓库使用 Pages 需要 GitHub Pro/Team/Enterprise）。
 
-> 项目页的访问路径包含仓库名，因此构建时要设置 Vite 的 `base`。部署到自有域名或根路径（如 Cloudflare）时仍使用默认构建。
+> 项目页的访问路径包含仓库名且大小写敏感（本仓库为 `/Txt-to-epub/`），`base` 必须与之完全一致，否则资源 404、页面空白。部署到自有域名或根路径（如 Cloudflare）时仍使用默认构建。
 
 ## 章节识别规则说明
 
