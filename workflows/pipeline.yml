@@ -1,0 +1,151 @@
+name: Pipeline
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一分支的并发流水线只保留最新一次
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  # GitHub Container Registry 要求镜像名小写，metadata-action 会自动转换
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: 测试与构建
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 运行测试
+        run: npm test -- --run
+
+      - name: 构建产物
+        run: npm run build
+
+      - name: 构建 CLI
+        run: npm run build:cli
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
+  docker:
+    name: 构建并推送镜像
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 QEMU（多架构构建）
+        uses: docker/setup-qemu-action@v3
+
+      - name: 设置 Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录 GHCR
+        # fork 提交的 PR 没有 packages 写权限，只在非 PR 事件登录
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 生成镜像元数据
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 构建并推送镜像
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          # PR 只验证镜像能否构建成功，不推送
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  pages:
+    name: 部署 GitHub Pages
+    needs: test
+    # 只在 main 分支和手动触发时部署，PR 不部署
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    # Pages 部署串行执行，排队而不是取消
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建（项目页路径前缀）
+        run: npm run build -- --base=/txt-to-epub/
+
+      - name: 配置 Pages
+        uses: actions/configure-pages@v5
+
+      - name: 上传 Pages 产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,22 @@
+# 依赖与构建产物
+node_modules
+dist
+dist-cli
+
+# 版本控制与 CI
+.git
+.gitignore
+.github
+
+# 构建镜像不需要的文件
+*.md
+LICENSE
+tests
+
+# 本地编辑器与缓存
+.idea
+.vscode
+*.log
+*.swp
+*.swo
+.DS_Store
