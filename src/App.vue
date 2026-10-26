@@ -28,6 +28,7 @@ const statusMessage = ref("");
 const errorMessage = ref("");
 const busy = ref(false);
 const lastFileName = ref("");
+const autoTitle = ref("");
 const cover = ref<Cover | null>(null);
 const coverPreviewUrl = ref<string | null>(null);
 const customRules = ref<ChapterRule[]>([]);
@@ -57,6 +58,11 @@ watch(
 );
 
 function updateMeta(meta: BookMeta) {
+  // Once the user edits the automatically generated title, keep it when
+  // another TXT file is parsed.
+  if (meta.title !== bookMeta.title && meta.title !== autoTitle.value) {
+    autoTitle.value = "";
+  }
   Object.assign(bookMeta, meta);
 }
 
@@ -91,9 +97,12 @@ async function handleParse(payload: { file: File; encoding: string | "auto" }) {
     rawLines.value = lines;
     chapters.value = parsed;
     selectedChapterId.value = parsed[0]?.id ?? null;
-    lastFileName.value = payload.file.name.replace(/\.txt$/i, "") || payload.file.name;
-    if (!bookMeta.title) {
+    const nextFileName = payload.file.name.replace(/\.txt$/i, "") || payload.file.name;
+    const shouldUseFileName = !bookMeta.title || bookMeta.title === autoTitle.value;
+    lastFileName.value = nextFileName;
+    if (shouldUseFileName) {
       bookMeta.title = lastFileName.value;
+      autoTitle.value = lastFileName.value;
     }
     statusMessage.value = `已解析 ${parsed.length} 个章节`;
   } catch (error) {
